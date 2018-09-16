@@ -1,3 +1,14 @@
 <resources>
     <string name="app_name">Android Selection Test</string>
+    <string name="x_y_z">X: 0.0\nY: 0.0\nZ: 0.0\nMod: 0.0</string>
+    <string name="frequency">Frequency:</string>
+    <string name="normal">Normal</string>
+    <string name="ui">UI</string>
+    <string name="game">Game</string>
+    <string name="faster">Faster</string>
+    <string name="g2">2g</string>
+    <string name="g2.5">2.5g</string>
+    <string name="g3">3g</string>
+    <string name="threshold">Threshold:</string>
+
 </resources>
