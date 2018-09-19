@@ -10,5 +10,7 @@
     <string name="g2.5">2.5g</string>
     <string name="g3">3g</string>
     <string name="threshold">Threshold:</string>
+    <string name="start">Start</string>
+    <string name="stop">Stop</string>
 
 </resources>

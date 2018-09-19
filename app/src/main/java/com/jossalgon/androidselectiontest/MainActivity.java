@@ -7,8 +7,11 @@ import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.support.annotation.IdRes;
 import android.support.v7.app.AppCompatActivity;
+import android.view.View;
+import android.widget.Button;
 import android.widget.RadioGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
@@ -21,9 +24,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private TextView mAccelerationTV;
     RadioGroup mFrequencySelectorRG;
     RadioGroup mThresholdSelectorRG;
+    Button mRunButton;
 
     private static final double GRAVITY = 9.8;
-    private double mThreshold = 0d;
+    private Double mThreshold;
+    private Integer mSensorDelay;
+    private boolean isRunning = false;
 
 
     @Override
@@ -36,28 +42,26 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         mAccelerationTV = (TextView) findViewById(R.id.acceleration);
         mFrequencySelectorRG = (RadioGroup) findViewById(R.id.frequencySelector);
         mThresholdSelectorRG = (RadioGroup) findViewById(R.id.thresholdSelector);
+        mRunButton = (Button) findViewById(R.id.runButton);
 
         mFrequencySelectorRG.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(RadioGroup group, @IdRes int checkedId) {
-                int sensorDelay = SensorManager.SENSOR_DELAY_NORMAL;
-
                 switch(checkedId) {
                     case R.id.radio_frequency_normal:
-                        sensorDelay = SensorManager.SENSOR_DELAY_NORMAL;
+                        mSensorDelay = SensorManager.SENSOR_DELAY_NORMAL;
                         break;
                     case R.id.radio_frequency_ui:
-                        sensorDelay = SensorManager.SENSOR_DELAY_UI;
+                        mSensorDelay = SensorManager.SENSOR_DELAY_UI;
                         break;
                     case R.id.radio_frequency_game:
-                        sensorDelay = SensorManager.SENSOR_DELAY_GAME;
+                        mSensorDelay = SensorManager.SENSOR_DELAY_GAME;
                         break;
                     case R.id.radio_frequency_faster:
-                        sensorDelay = SensorManager.SENSOR_DELAY_FASTEST;
+                        mSensorDelay = SensorManager.SENSOR_DELAY_FASTEST;
                         break;
                 }
-                mSensorManager.unregisterListener(MainActivity.this);
-                mSensorManager.registerListener(MainActivity.this, mSensor, sensorDelay);
+
             }
         });
 
@@ -74,6 +78,25 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     case R.id.radio_3g:
                         mThreshold = 3 * GRAVITY;
                         break;
+                }
+            }
+        });
+
+        mRunButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mSensorDelay == null || mThreshold == null) {
+                    Toast.makeText(MainActivity.this, "First configure the params",
+                            Toast.LENGTH_SHORT).show();
+                }
+                else if (isRunning) {
+                    mSensorManager.unregisterListener(MainActivity.this);
+                    isRunning = false;
+                    mRunButton.setText(getResources().getString(R.string.start));
+                } else {
+                    mSensorManager.registerListener(MainActivity.this, mSensor, mSensorDelay);
+                    isRunning = true;
+                    mRunButton.setText(getResources().getString(R.string.stop));
                 }
             }
         });
