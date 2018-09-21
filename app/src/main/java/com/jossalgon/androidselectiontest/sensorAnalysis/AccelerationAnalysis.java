@@ -24,7 +24,7 @@ public class AccelerationAnalysis {
     private SensorEventListener mSensorListener;
     private boolean running = false;
     private double mThreshold = 0d;
-    private int mSensorDelay;
+    private int mSensorDelay = -1;
     private View.OnClickListener mOnClickListener;
 
     public AccelerationAnalysis(WeakReference<Context> contextRef, SensorManager sensorManager, Button button) {
@@ -53,7 +53,7 @@ public class AccelerationAnalysis {
         this.mOnClickListener = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mSensorDelay == 0 || mThreshold == 0d) {
+                if (mSensorDelay == -1 || mThreshold == 0d) {
                     Toast.makeText(mContextRef.get(), "Please, first configure the params",
                             Toast.LENGTH_SHORT).show();
                 } else if (isRunning()) {
