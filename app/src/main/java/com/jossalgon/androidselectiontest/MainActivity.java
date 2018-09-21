@@ -1,12 +1,5 @@
 package com.jossalgon.androidselectiontest;
 
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -14,8 +7,6 @@ import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.support.annotation.IdRes;
 import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
@@ -25,13 +16,13 @@ import android.widget.Toast;
 
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.jossalgon.androidselectiontest.envAnalysis.BluetoothAnalysis;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
-    private static final int REQUEST_ENABLE_BT = 9854;
-    private static final int ACTION_REQUEST_BLUETOOTH_PERMISSIONS = 1;
     private SensorManager mSensorManager;
     private Sensor mSensor;
 
@@ -45,9 +36,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private Integer mSensorDelay;
     private boolean isRunning = false;
 
-    BluetoothAdapter mBluetoothAdapter;
     ArrayList<String> mArrayAdapter = new ArrayList<String>();
-
+    BluetoothAnalysis mBluetoothAnalysis;
 
 
     @Override
@@ -119,82 +109,18 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
         });
 
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        checkPermissions();
-    }
-
-    private void checkPermissions() {
-        int pCheck = ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION);
-        pCheck += ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION);
-        pCheck += ContextCompat.checkSelfPermission(this, android.Manifest.permission.BLUETOOTH_ADMIN);
-        pCheck += ContextCompat.checkSelfPermission(this, android.Manifest.permission.BLUETOOTH);
-        if (pCheck != 0) {
-            ActivityCompat.requestPermissions(this, new String[]{
-                    android.Manifest.permission.ACCESS_FINE_LOCATION,
-                    android.Manifest.permission.ACCESS_COARSE_LOCATION,
-                    android.Manifest.permission.BLUETOOTH_ADMIN,
-                    android.Manifest.permission.BLUETOOTH}, ACTION_REQUEST_BLUETOOTH_PERMISSIONS);
-        } else {
-            searchBluetoothDevices();
-        }
-    }
-
-    private void searchBluetoothDevices() {
-        if (mBluetoothAdapter == null) {
-            Toast.makeText(this, "NO BLUETOOTH", Toast.LENGTH_SHORT).show();
-        } else {
-            if (!mBluetoothAdapter.isEnabled()) {
-                mBluetoothAdapter.enable();
-                if (mBluetoothAdapter.isDiscovering()) {
-                    mBluetoothAdapter.cancelDiscovery();
-                }
-            }
-
-            IntentFilter filter = new IntentFilter();
-
-            filter.addAction(BluetoothDevice.ACTION_FOUND);
-            filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
-            filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
-
-            registerReceiver(mReceiver, filter);
-
-            Toast.makeText(this, "DISCOVERING", Toast.LENGTH_SHORT).show();
-            mBluetoothAdapter.startDiscovery();
-        }
+        mBluetoothAnalysis = new BluetoothAnalysis(new WeakReference<>(getApplicationContext()), this);
+        mBluetoothAnalysis.startSearching();
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String permissions[],
-                                           @NonNull int[] grantResults) {
-        switch (requestCode) {
-            case ACTION_REQUEST_BLUETOOTH_PERMISSIONS:
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    searchBluetoothDevices();
-                } else {
-                    Toast.makeText(this, "Please, accept permissions to search devices",
-                            Toast.LENGTH_SHORT).show();
-                    checkPermissions();
-                }
-        }
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        mBluetoothAnalysis.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
-
-    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            Toast.makeText(MainActivity.this, action, Toast.LENGTH_SHORT).show();
-            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                BluetoothDiscoveredDevice discoveredDevice = new BluetoothDiscoveredDevice(device.getAddress());
-                saveToFirebase(discoveredDevice);
-            }
-        }
-    };
 
     @Override
     protected void onDestroy() {
-        unregisterReceiver(mReceiver);
+        mBluetoothAnalysis.unregister();
         mSensorManager.unregisterListener(this);
         super.onDestroy();
     }
@@ -226,16 +152,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
     }
 
-    private static class BluetoothDiscoveredDevice {
-        public String mac_address_BT;
-        public String timestamp;
 
-        public BluetoothDiscoveredDevice(String mac_address_BT) {
-            Long tsLong = System.currentTimeMillis()/1000;
-            this.timestamp = tsLong.toString();
-            this.mac_address_BT = mac_address_BT;
-        }
-    }
 
     private void saveToFirebase(Acceleration acceleration) {
         FirebaseDatabase database = FirebaseDatabase.getInstance();
@@ -243,11 +160,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         accelerationsRef.push().setValue(acceleration);
     }
 
-    private void saveToFirebase(BluetoothDiscoveredDevice BluetoothDiscoveredDevice) {
-        FirebaseDatabase database = FirebaseDatabase.getInstance();
-        DatabaseReference accelerationsRef = database.getReference("bluetoothDevices");
-        accelerationsRef.push().setValue(BluetoothDiscoveredDevice);
-    }
+
 
     @Override
     public void onSensorChanged(SensorEvent event) {
