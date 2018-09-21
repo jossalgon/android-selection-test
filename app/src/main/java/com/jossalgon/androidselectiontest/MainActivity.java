@@ -10,6 +10,7 @@ import android.widget.RadioGroup;
 
 import com.jossalgon.androidselectiontest.envAnalysis.BluetoothAnalysis;
 import com.jossalgon.androidselectiontest.sensorAnalysis.AccelerationAnalysis;
+import com.jossalgon.androidselectiontest.sensorAnalysis.StepsAnalysis;
 
 import java.lang.ref.WeakReference;
 
@@ -22,6 +23,7 @@ public class MainActivity extends AppCompatActivity {
     Button mRunAccelerationButton, mRunStepsCounterButton, mRunBluetoothButton, mRunWifiButton;
     BluetoothAnalysis mBluetoothAnalysis;
     AccelerationAnalysis mAccelerationAnalysis;
+    StepsAnalysis mStepsAnalysis;
 
 
     @Override
@@ -43,24 +45,34 @@ public class MainActivity extends AppCompatActivity {
                 mRunAccelerationButton);
         mRunAccelerationButton.setOnClickListener(mAccelerationAnalysis.getmOnClickListener());
 
+        mStepsAnalysis = new StepsAnalysis(new WeakReference<>(getApplicationContext()),
+                mSensorManager,
+                mRunStepsCounterButton);
+        mRunStepsCounterButton.setOnClickListener(mStepsAnalysis.getmOnClickListener());
+
         mFrequencySelectorRG.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(RadioGroup group, @IdRes int checkedId) {
                 switch(checkedId) {
                     case R.id.radio_frequency_normal:
                         mAccelerationAnalysis.setSensorDelay(SensorManager.SENSOR_DELAY_NORMAL);
+                        mStepsAnalysis.setSensorDelay(SensorManager.SENSOR_DELAY_NORMAL);
                         break;
                     case R.id.radio_frequency_ui:
                         mAccelerationAnalysis.setSensorDelay(SensorManager.SENSOR_DELAY_UI);
+                        mStepsAnalysis.setSensorDelay(SensorManager.SENSOR_DELAY_UI);
                         break;
                     case R.id.radio_frequency_game:
                         mAccelerationAnalysis.setSensorDelay(SensorManager.SENSOR_DELAY_GAME);
+                        mStepsAnalysis.setSensorDelay(SensorManager.SENSOR_DELAY_GAME);
                         break;
                     case R.id.radio_frequency_faster:
                         mAccelerationAnalysis.setSensorDelay(SensorManager.SENSOR_DELAY_FASTEST);
+                        mStepsAnalysis.setSensorDelay(SensorManager.SENSOR_DELAY_FASTEST);
                         break;
                 }
                 mAccelerationAnalysis.reloadListener();
+                mStepsAnalysis.reloadListener();
             }
         });
 
