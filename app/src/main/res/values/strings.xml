@@ -10,7 +10,13 @@
     <string name="g2.5">2.5g</string>
     <string name="g3">3g</string>
     <string name="threshold">Threshold:</string>
-    <string name="start">Start</string>
-    <string name="stop">Stop</string>
+    <string name="startAcceleration">Start Acceleration</string>
+    <string name="stopAcceleration">Stop Acceleration</string>
+    <string name="startStepsCounter">Start Steps Counter</string>
+    <string name="stopStepsCounter">Stop Steps Counter</string>
+    <string name="startBluetooth">Start Bluetooth</string>
+    <string name="stopBluetooth">Stop Bluetooth</string>
+    <string name="startWifi">Start WiFi</string>
+    <string name="stopWifi">Stop WiFi</string>
 
 </resources>

@@ -11,7 +11,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.RadioGroup;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.firebase.database.DatabaseReference;
@@ -19,24 +18,24 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.jossalgon.androidselectiontest.envAnalysis.BluetoothAnalysis;
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
     private SensorManager mSensorManager;
-    private Sensor mSensor;
+    private Sensor mAccelerometerSensor, mStepCounterSensor;
 
-    private TextView mAccelerationTV;
     RadioGroup mFrequencySelectorRG;
     RadioGroup mThresholdSelectorRG;
-    Button mRunButton;
+    Button mRunAccelerationButton, mRunStepsCounterButton, mRunBluetoothButton, mRunWifiButton;
 
     private static final double GRAVITY = 9.8;
     private Double mThreshold;
     private Integer mSensorDelay;
-    private boolean isRunning = false;
+    private boolean isAccelerationRunning = false;
+    private boolean isStepsCounterRunning = false;
+    private boolean isBluetoothRunning = false;
 
-    ArrayList<String> mArrayAdapter = new ArrayList<String>();
+
     BluetoothAnalysis mBluetoothAnalysis;
 
 
@@ -46,11 +45,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         setContentView(R.layout.activity_main);
 
         mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        mAccelerationTV = (TextView) findViewById(R.id.acceleration);
+        mAccelerometerSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        mStepCounterSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
         mFrequencySelectorRG = (RadioGroup) findViewById(R.id.frequencySelector);
         mThresholdSelectorRG = (RadioGroup) findViewById(R.id.thresholdSelector);
-        mRunButton = (Button) findViewById(R.id.runButton);
+        mRunAccelerationButton = (Button) findViewById(R.id.runAccelerationButton);
+        mRunStepsCounterButton = (Button) findViewById(R.id.runStepsCounterButton);
+        mRunBluetoothButton = (Button) findViewById(R.id.runBluetoothButton);
+        mRunWifiButton = (Button) findViewById(R.id.runWifiButton);
 
         mFrequencySelectorRG.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
@@ -69,7 +71,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         mSensorDelay = SensorManager.SENSOR_DELAY_FASTEST;
                         break;
                 }
-
+                mSensorManager.unregisterListener(MainActivity.this, mAccelerometerSensor);
+                mSensorManager.registerListener(MainActivity.this, mAccelerometerSensor, mSensorDelay);
             }
         });
 
@@ -90,27 +93,42 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
         });
 
-        mRunButton.setOnClickListener(new View.OnClickListener() {
+        mRunAccelerationButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (mSensorDelay == null || mThreshold == null) {
                     Toast.makeText(MainActivity.this, "Please, first configure the params",
                             Toast.LENGTH_SHORT).show();
                 }
-                else if (isRunning) {
-                    mSensorManager.unregisterListener(MainActivity.this);
-                    isRunning = false;
-                    mRunButton.setText(getResources().getString(R.string.start));
+                else if (isAccelerationRunning) {
+                    mSensorManager.unregisterListener(MainActivity.this, mAccelerometerSensor);
+                    isAccelerationRunning = false;
+                    mRunAccelerationButton.setText(getResources().getString(R.string.startAcceleration));
                 } else {
-                    mSensorManager.registerListener(MainActivity.this, mSensor, mSensorDelay);
-                    isRunning = true;
-                    mRunButton.setText(getResources().getString(R.string.stop));
+                    mSensorManager.registerListener(MainActivity.this, mAccelerometerSensor, mSensorDelay);
+                    isAccelerationRunning = true;
+                    mRunAccelerationButton.setText(getResources().getString(R.string.stopAcceleration));
                 }
             }
         });
 
         mBluetoothAnalysis = new BluetoothAnalysis(new WeakReference<>(getApplicationContext()), this);
-        mBluetoothAnalysis.startSearching();
+
+        mRunBluetoothButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (isBluetoothRunning) {
+                    mBluetoothAnalysis.unregister();
+                    isBluetoothRunning = false;
+                    mRunBluetoothButton.setText(getResources().getString(R.string.startBluetooth));
+                } else {
+                    mBluetoothAnalysis.startSearching();
+                    isBluetoothRunning = true;
+                    mRunBluetoothButton.setText(getResources().getString(R.string.stopBluetooth));
+                }
+            }
+        });
+
     }
 
     @Override
@@ -140,16 +158,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             this.acc_modulo1 = acc_modulo1;
             this.s_n1 = s_n1;
         }
-
-        @Override
-        public String toString() {
-            return "X: " + acc_x1 +
-                    "\nY: " + acc_y1 +
-                    "\nZ: " + acc_z1 +
-                    "\nMod: " + acc_modulo1 +
-                    "\nTimestamp: " + timestamp +
-                    "\nExceeded: " + s_n1;
-        }
     }
 
 
@@ -170,7 +178,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         double mod = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2));
         boolean thresholdExceeded = (mThreshold > 0 && mod >= mThreshold);
         Acceleration acceleration = new Acceleration(x, y, z, mod, thresholdExceeded);
-        mAccelerationTV.setText(acceleration.toString());
         saveToFirebase(acceleration);
     }
 

@@ -70,24 +70,39 @@
             android:layout_height="wrap_content"/>
     </RadioGroup>
 
-    <TextView
-        android:id="@+id/acceleration"
-        android:text="@string/x_y_z"
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@+id/frequencySelector"
-        app:layout_constraintBottom_toBottomOf="@+id/runButton"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent" />
-
-    <Button
-        android:id="@+id/runButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/start"
+        android:orientation="vertical"
+        android:gravity="center"
+        app:layout_constraintTop_toBottomOf="@+id/thresholdSelector"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        android:layout_marginBottom="16pt" />
+        app:layout_constraintRight_toRightOf="parent">
+        <Button
+            android:id="@+id/runAccelerationButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/startAcceleration"/>
+
+        <Button
+            android:id="@+id/runStepsCounterButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/startStepsCounter"/>
+
+        <Button
+            android:id="@+id/runBluetoothButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/startBluetooth"/>
+
+        <Button
+            android:id="@+id/runWifiButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/startWifi"/>
+    </LinearLayout>
+
 
 </android.support.constraint.ConstraintLayout>
