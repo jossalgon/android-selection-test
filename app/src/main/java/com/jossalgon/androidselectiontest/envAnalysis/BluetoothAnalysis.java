@@ -11,28 +11,65 @@ import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.jossalgon.androidselectiontest.R;
 
 import java.lang.ref.WeakReference;
 
+import static android.content.ContentValues.TAG;
+
 
 public class BluetoothAnalysis {
-    private static final int ACTION_REQUEST_BLUETOOTH_PERMISSIONS = 1;
-
     private WeakReference<Context> mContextRef;
     private Activity mActivity;
-    private BluetoothAdapter mBluetoothAdapter;
+    private Button mButton;
 
-    public BluetoothAnalysis(WeakReference<Context> mContextRef, Activity mActivity) {
-        this.mContextRef = mContextRef;
-        this.mActivity = mActivity;
+    private static final int ACTION_REQUEST_BLUETOOTH_PERMISSIONS = 1;
+    private BluetoothAdapter mBluetoothAdapter;
+    private View.OnClickListener mOnClickListener;
+    private boolean mRunning = false;
+
+
+    public BluetoothAnalysis(WeakReference<Context> contextRef, Activity activity, Button button) {
+        this.mContextRef = contextRef;
+        this.mActivity = activity;
         this.mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        this.mButton = button;
+
+        this.mOnClickListener = new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (isRunning()) {
+                    unregisterListener();
+                    mButton.setText(mContextRef.get().getResources().getString(R.string.startBluetooth));
+                } else {
+                    startSearching();
+                    mButton.setText(mContextRef.get().getResources().getString(R.string.stopBluetooth));
+                }
+            }
+        };
+    }
+
+    public View.OnClickListener getOnClickListener() {
+        return mOnClickListener;
+    }
+
+    private boolean isRunning() {
+        return mRunning;
+    }
+
+    private void setRunning(boolean running) {
+        this.mRunning = running;
     }
 
     public void startSearching() {
+        setRunning(true);
         int pCheck = ContextCompat.checkSelfPermission(mContextRef.get(), android.Manifest.permission.ACCESS_FINE_LOCATION);
         pCheck += ContextCompat.checkSelfPermission(mContextRef.get(), android.Manifest.permission.ACCESS_COARSE_LOCATION);
         pCheck += ContextCompat.checkSelfPermission(mContextRef.get(), android.Manifest.permission.BLUETOOTH_ADMIN);
@@ -100,6 +137,7 @@ public class BluetoothAnalysis {
             FirebaseDatabase database = FirebaseDatabase.getInstance();
             DatabaseReference dbRef = database.getReference("bluetoothDevices");
             dbRef.push().setValue(this);
+            Log.d(TAG, "saveToFirebase: "+ this.timestamp);
         }
     }
 
@@ -114,7 +152,8 @@ public class BluetoothAnalysis {
         }
     };
 
-    public void unregister() {
+    public void unregisterListener() {
+        setRunning(false);
         mContextRef.get().unregisterReceiver(mReceiver);
     }
 
