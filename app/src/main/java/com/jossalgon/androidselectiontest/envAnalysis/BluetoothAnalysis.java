@@ -8,6 +8,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.hardware.SensorManager;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -30,6 +32,7 @@ public class BluetoothAnalysis {
     private static final int ACTION_REQUEST_BLUETOOTH_PERMISSIONS = 1;
     private BluetoothAdapter mBluetoothAdapter;
     private View.OnClickListener mOnClickListener;
+    private int mSensorDelay = -1;
     private boolean mRunning = false;
 
 
@@ -42,7 +45,12 @@ public class BluetoothAnalysis {
         this.mOnClickListener = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (isRunning()) {
+                if (mBluetoothAdapter == null) {
+                    Toast.makeText(mContextRef.get(), "NO BLUETOOTH", Toast.LENGTH_SHORT).show();
+                } else if (mSensorDelay == -1) {
+                    Toast.makeText(mContextRef.get(), "Please, first configure the frequency",
+                            Toast.LENGTH_SHORT).show();
+                } else if (isRunning()) {
                     unregisterListener();
                     mButton.setText(mContextRef.get().getResources().getString(R.string.startBluetooth));
                 } else {
@@ -65,8 +73,7 @@ public class BluetoothAnalysis {
         this.mRunning = running;
     }
 
-    public void startSearching() {
-        setRunning(true);
+    private void startSearching() {
         int pCheck = ContextCompat.checkSelfPermission(mContextRef.get(), android.Manifest.permission.ACCESS_FINE_LOCATION);
         pCheck += ContextCompat.checkSelfPermission(mContextRef.get(), android.Manifest.permission.ACCESS_COARSE_LOCATION);
         pCheck += ContextCompat.checkSelfPermission(mContextRef.get(), android.Manifest.permission.BLUETOOTH_ADMIN);
@@ -78,30 +85,37 @@ public class BluetoothAnalysis {
                     android.Manifest.permission.BLUETOOTH_ADMIN,
                     android.Manifest.permission.BLUETOOTH}, ACTION_REQUEST_BLUETOOTH_PERMISSIONS);
         } else {
+            setRunning(true);
             searchBluetoothDevices();
         }
     }
 
     private void searchBluetoothDevices() {
-        if (mBluetoothAdapter == null) {
-            Toast.makeText(mContextRef.get(), "NO BLUETOOTH", Toast.LENGTH_SHORT).show();
-        } else {
-            if (!mBluetoothAdapter.isEnabled()) {
-                mBluetoothAdapter.enable();
-                if (mBluetoothAdapter.isDiscovering()) {
-                    mBluetoothAdapter.cancelDiscovery();
-                }
+        if (!mBluetoothAdapter.isEnabled()) {
+            mBluetoothAdapter.enable();
+            if (mBluetoothAdapter.isDiscovering()) {
+                mBluetoothAdapter.cancelDiscovery();
             }
-
-            IntentFilter filter = new IntentFilter();
-
-            filter.addAction(BluetoothDevice.ACTION_FOUND);
-            filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
-            filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
-
-            mContextRef.get().registerReceiver(mReceiver, filter);
-            mBluetoothAdapter.startDiscovery();
         }
+
+        IntentFilter filter = new IntentFilter();
+
+        filter.addAction(BluetoothDevice.ACTION_FOUND);
+        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
+        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+
+        mContextRef.get().registerReceiver(mReceiver, filter);
+        mBluetoothAdapter.startDiscovery();
+    }
+
+    private void startDiscoveryWithDelay() {
+        final Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                mBluetoothAdapter.startDiscovery();
+            }
+        }, getDelay());
     }
 
     public void onRequestPermissionsResult(int requestCode,
@@ -140,10 +154,15 @@ public class BluetoothAnalysis {
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
+            boolean shouldContinue = isRunning();
+
             if (BluetoothDevice.ACTION_FOUND.equals(action)) {
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 BluetoothDiscoveredDevice discoveredDevice = new BluetoothDiscoveredDevice(device.getAddress());
                 discoveredDevice.saveToFirebase();
+            }
+            else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action) && shouldContinue) {
+                startDiscoveryWithDelay();
             }
         }
     };
@@ -153,6 +172,32 @@ public class BluetoothAnalysis {
             setRunning(false);
             mContextRef.get().unregisterReceiver(mReceiver);
         }
+    }
+
+    public void setSensorDelay(int sensorDelay) {
+        this.mSensorDelay = sensorDelay;
+    }
+
+    private int getDelay() {
+        int delay = -1;
+        switch (mSensorDelay) {
+            case SensorManager.SENSOR_DELAY_FASTEST:
+                delay = 0;
+                break;
+            case SensorManager.SENSOR_DELAY_GAME:
+                delay = 20;
+                break;
+            case SensorManager.SENSOR_DELAY_UI:
+                delay = 66;
+                break;
+            case SensorManager.SENSOR_DELAY_NORMAL:
+                delay = 200;
+                break;
+            default:
+                delay = mSensorDelay;
+                break;
+        }
+        return delay;
     }
 
 

@@ -62,21 +62,25 @@ public class MainActivity extends AppCompatActivity {
                         mAccelerationAnalysis.setSensorDelay(SensorManager.SENSOR_DELAY_NORMAL);
                         mStepsAnalysis.setSensorDelay(SensorManager.SENSOR_DELAY_NORMAL);
                         mWifiAnalysis.setSensorDelay(SensorManager.SENSOR_DELAY_NORMAL);
+                        mBluetoothAnalysis.setSensorDelay(SensorManager.SENSOR_DELAY_NORMAL);
                         break;
                     case R.id.radio_frequency_ui:
                         mAccelerationAnalysis.setSensorDelay(SensorManager.SENSOR_DELAY_UI);
                         mStepsAnalysis.setSensorDelay(SensorManager.SENSOR_DELAY_UI);
                         mWifiAnalysis.setSensorDelay(SensorManager.SENSOR_DELAY_UI);
+                        mBluetoothAnalysis.setSensorDelay(SensorManager.SENSOR_DELAY_UI);
                         break;
                     case R.id.radio_frequency_game:
                         mAccelerationAnalysis.setSensorDelay(SensorManager.SENSOR_DELAY_GAME);
                         mStepsAnalysis.setSensorDelay(SensorManager.SENSOR_DELAY_GAME);
                         mWifiAnalysis.setSensorDelay(SensorManager.SENSOR_DELAY_GAME);
+                        mBluetoothAnalysis.setSensorDelay(SensorManager.SENSOR_DELAY_GAME);
                         break;
                     case R.id.radio_frequency_faster:
                         mAccelerationAnalysis.setSensorDelay(SensorManager.SENSOR_DELAY_FASTEST);
                         mStepsAnalysis.setSensorDelay(SensorManager.SENSOR_DELAY_FASTEST);
                         mWifiAnalysis.setSensorDelay(SensorManager.SENSOR_DELAY_FASTEST);
+                        mBluetoothAnalysis.setSensorDelay(SensorManager.SENSOR_DELAY_FASTEST);
                         break;
                 }
                 mAccelerationAnalysis.reloadListener();
@@ -120,6 +124,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         mBluetoothAnalysis.unregisterListener();
         mAccelerationAnalysis.unregisterListener();
+        mWifiAnalysis.unregisterListener();
+        mStepsAnalysis.unregisterListener();
         super.onDestroy();
     }
 

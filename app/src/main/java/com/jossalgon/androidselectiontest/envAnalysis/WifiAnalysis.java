@@ -104,7 +104,7 @@ public class WifiAnalysis {
         }).start();
     }
 
-    public int getDelay() {
+    private int getDelay() {
         int delay = -1;
         switch (mSensorDelay) {
             case SensorManager.SENSOR_DELAY_FASTEST:
