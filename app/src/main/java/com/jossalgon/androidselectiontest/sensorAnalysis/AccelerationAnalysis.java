@@ -80,8 +80,10 @@ public class AccelerationAnalysis {
     }
 
     public void unregisterListener() {
-        setRunning(false);
-        mSensorManager.unregisterListener(mSensorListener, mSensor);
+        if (isRunning()) {
+            setRunning(false);
+            mSensorManager.unregisterListener(mSensorListener, mSensor);
+        }
     }
 
     public View.OnClickListener getmOnClickListener() {

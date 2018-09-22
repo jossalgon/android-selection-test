@@ -11,7 +11,6 @@ import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -21,8 +20,6 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.jossalgon.androidselectiontest.R;
 
 import java.lang.ref.WeakReference;
-
-import static android.content.ContentValues.TAG;
 
 
 public class BluetoothAnalysis {
@@ -137,7 +134,6 @@ public class BluetoothAnalysis {
             FirebaseDatabase database = FirebaseDatabase.getInstance();
             DatabaseReference dbRef = database.getReference("bluetoothDevices");
             dbRef.push().setValue(this);
-            Log.d(TAG, "saveToFirebase: "+ this.timestamp);
         }
     }
 
@@ -153,8 +149,10 @@ public class BluetoothAnalysis {
     };
 
     public void unregisterListener() {
-        setRunning(false);
-        mContextRef.get().unregisterReceiver(mReceiver);
+        if (isRunning()) {
+            setRunning(false);
+            mContextRef.get().unregisterReceiver(mReceiver);
+        }
     }
 
 
