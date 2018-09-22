@@ -136,12 +136,14 @@ public class BluetoothAnalysis {
 
     private static class BluetoothDiscoveredDevice {
         public String mac_address_BT;
+        public int rssi;
         public String timestamp;
 
-        public BluetoothDiscoveredDevice(String mac_address_BT) {
+        public BluetoothDiscoveredDevice(String mac_address_BT, int rssi) {
             Long tsLong = System.currentTimeMillis()/1000;
             this.timestamp = tsLong.toString();
             this.mac_address_BT = mac_address_BT;
+            this.rssi = rssi;
         }
 
         public void saveToFirebase() {
@@ -158,7 +160,9 @@ public class BluetoothAnalysis {
 
             if (BluetoothDevice.ACTION_FOUND.equals(action)) {
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                BluetoothDiscoveredDevice discoveredDevice = new BluetoothDiscoveredDevice(device.getAddress());
+                int rssi = intent.getShortExtra(BluetoothDevice.EXTRA_RSSI,Short.MIN_VALUE);
+                BluetoothDiscoveredDevice discoveredDevice = new BluetoothDiscoveredDevice(
+                        device.getAddress(), rssi);
                 discoveredDevice.saveToFirebase();
             }
             else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action) && shouldContinue) {
