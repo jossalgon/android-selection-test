@@ -175,6 +175,11 @@ public class MainActivity extends AppCompatActivity {
         mStepsAnalysis.unregisterListener();
         mFrequencySelectorRG.clearCheck();
         mThresholdSelectorRG.clearCheck();
+        mBluetoothAnalysis.setSensorDelay(-1);
+        mAccelerationAnalysis.setSensorDelay(-1);
+        mAccelerationAnalysis.setThreshold(0d);
+        mWifiAnalysis.setSensorDelay(-1);
+        mStepsAnalysis.setSensorDelay(-1);
     }
 
     @Override
