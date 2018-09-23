@@ -87,28 +87,59 @@ public class BluetoothAnalysis {
                     android.Manifest.permission.BLUETOOTH_ADMIN,
                     android.Manifest.permission.BLUETOOTH}, ACTION_REQUEST_BLUETOOTH_PERMISSIONS);
         } else {
+            registerReceiver();
             searchBluetoothDevices();
             setRunning(true);
             mButton.setText(mContextRef.get().getResources().getString(R.string.stopBluetooth));
         }
     }
 
+    private void registerReceiver() {
+        IntentFilter filter = new IntentFilter();
+
+        filter.addAction(BluetoothDevice.ACTION_FOUND);
+        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
+        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+        filter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
+
+        mContextRef.get().registerReceiver(mReceiver, filter);
+    }
+
+    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            boolean shouldContinue = isRunning();
+
+            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                int rssi = intent.getShortExtra(BluetoothDevice.EXTRA_RSSI,Short.MIN_VALUE);
+                BluetoothDiscoveredDevice discoveredDevice = new BluetoothDiscoveredDevice(
+                        device.getAddress(), rssi, mUserUID);
+                discoveredDevice.saveToFirebase();
+            }
+            else if ((BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) && shouldContinue) {
+                startDiscoveryWithDelay();
+            }
+            else if (BluetoothAdapter.ACTION_STATE_CHANGED.equals(action) &&
+                    shouldContinue) {
+                checkBluetooth();
+                startSearching();
+            }
+        }
+    };
+
     private void searchBluetoothDevices() {
+        checkBluetooth();
+        mBluetoothAdapter.startDiscovery();
+    }
+
+    private void checkBluetooth() {
         if (!mBluetoothAdapter.isEnabled()) {
             mBluetoothAdapter.enable();
             if (mBluetoothAdapter.isDiscovering()) {
                 mBluetoothAdapter.cancelDiscovery();
             }
         }
-
-        IntentFilter filter = new IntentFilter();
-
-        filter.addAction(BluetoothDevice.ACTION_FOUND);
-        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
-        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
-
-        mContextRef.get().registerReceiver(mReceiver, filter);
-        mBluetoothAdapter.startDiscovery();
     }
 
     private void startDiscoveryWithDelay() {
@@ -116,7 +147,7 @@ public class BluetoothAnalysis {
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                mBluetoothAdapter.startDiscovery();
+                searchBluetoothDevices();
             }
         }, getDelay());
     }
@@ -159,24 +190,6 @@ public class BluetoothAnalysis {
             dbRef2.push().setValue(this);
         }
     }
-
-    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            boolean shouldContinue = isRunning();
-
-            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                int rssi = intent.getShortExtra(BluetoothDevice.EXTRA_RSSI,Short.MIN_VALUE);
-                BluetoothDiscoveredDevice discoveredDevice = new BluetoothDiscoveredDevice(
-                        device.getAddress(), rssi, mUserUID);
-                discoveredDevice.saveToFirebase();
-            }
-            else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action) && shouldContinue) {
-                startDiscoveryWithDelay();
-            }
-        }
-    };
 
     public void unregisterListener() {
         if (isRunning()) {

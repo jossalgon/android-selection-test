@@ -62,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
                 FirebaseUser user = firebaseAuth.getCurrentUser();
                 if (user != null) {
-
+                    setAnalysisSystems(user.getUid());
                 } else {
                     startActivityForResult(
                             AuthUI.getInstance()
@@ -92,21 +92,29 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setAnalysisSystems(String userUID) {
-        mAccelerationAnalysis = new AccelerationAnalysis(new WeakReference<>(getApplicationContext()),
-                mSensorManager, mRunAccelerationButton, userUID);
-        mRunAccelerationButton.setOnClickListener(mAccelerationAnalysis.getmOnClickListener());
+        if (mAccelerationAnalysis == null) {
+            mAccelerationAnalysis = new AccelerationAnalysis(new WeakReference<>(getApplicationContext()),
+                    mSensorManager, mRunAccelerationButton, userUID);
+            mRunAccelerationButton.setOnClickListener(mAccelerationAnalysis.getmOnClickListener());
+        }
 
-        mStepsAnalysis = new StepsAnalysis(new WeakReference<>(getApplicationContext()),
-                mSensorManager, mRunStepsCounterButton, userUID);
-        mRunStepsCounterButton.setOnClickListener(mStepsAnalysis.getmOnClickListener());
+        if (mStepsAnalysis == null) {
+            mStepsAnalysis = new StepsAnalysis(new WeakReference<>(getApplicationContext()),
+                    mSensorManager, mRunStepsCounterButton, userUID);
+            mRunStepsCounterButton.setOnClickListener(mStepsAnalysis.getmOnClickListener());
+        }
 
-        mBluetoothAnalysis = new BluetoothAnalysis(new WeakReference<>(getApplicationContext()),
-                this, mRunBluetoothButton, userUID);
-        mRunBluetoothButton.setOnClickListener(mBluetoothAnalysis.getOnClickListener());
+        if (mBluetoothAnalysis == null) {
+            mBluetoothAnalysis = new BluetoothAnalysis(new WeakReference<>(getApplicationContext()),
+                    this, mRunBluetoothButton, userUID);
+            mRunBluetoothButton.setOnClickListener(mBluetoothAnalysis.getOnClickListener());
+        }
 
-        mWifiAnalysis = new WifiAnalysis(new WeakReference<Context>(getApplicationContext()),
-                mRunWifiButton, userUID);
-        mRunWifiButton.setOnClickListener(mWifiAnalysis.getOnClickListener());
+        if (mWifiAnalysis == null) {
+            mWifiAnalysis = new WifiAnalysis(new WeakReference<Context>(getApplicationContext()),
+                    mRunWifiButton, userUID);
+            mRunWifiButton.setOnClickListener(mWifiAnalysis.getOnClickListener());
+        }
 
         mFrequencySelectorRG.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
