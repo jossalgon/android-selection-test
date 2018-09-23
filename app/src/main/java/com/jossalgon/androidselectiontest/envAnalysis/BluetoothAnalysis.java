@@ -28,6 +28,7 @@ public class BluetoothAnalysis {
     private WeakReference<Context> mContextRef;
     private Activity mActivity;
     private Button mButton;
+    private String mUserUID;
 
     private static final int ACTION_REQUEST_BLUETOOTH_PERMISSIONS = 1;
     private BluetoothAdapter mBluetoothAdapter;
@@ -36,11 +37,13 @@ public class BluetoothAnalysis {
     private boolean mRunning = false;
 
 
-    public BluetoothAnalysis(WeakReference<Context> contextRef, Activity activity, Button button) {
+    public BluetoothAnalysis(WeakReference<Context> contextRef, Activity activity, Button button,
+                             String userUID) {
         this.mContextRef = contextRef;
         this.mActivity = activity;
         this.mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         this.mButton = button;
+        this.mUserUID = userUID;
 
         this.mOnClickListener = new View.OnClickListener() {
             @Override
@@ -55,7 +58,6 @@ public class BluetoothAnalysis {
                     mButton.setText(mContextRef.get().getResources().getString(R.string.startBluetooth));
                 } else {
                     startSearching();
-                    mButton.setText(mContextRef.get().getResources().getString(R.string.stopBluetooth));
                 }
             }
         };
@@ -85,8 +87,9 @@ public class BluetoothAnalysis {
                     android.Manifest.permission.BLUETOOTH_ADMIN,
                     android.Manifest.permission.BLUETOOTH}, ACTION_REQUEST_BLUETOOTH_PERMISSIONS);
         } else {
-            setRunning(true);
             searchBluetoothDevices();
+            setRunning(true);
+            mButton.setText(mContextRef.get().getResources().getString(R.string.stopBluetooth));
         }
     }
 
@@ -138,18 +141,22 @@ public class BluetoothAnalysis {
         public String mac_address_BT;
         public int rssi;
         public String timestamp;
+        public String userUID;
 
-        public BluetoothDiscoveredDevice(String mac_address_BT, int rssi) {
+        public BluetoothDiscoveredDevice(String mac_address_BT, int rssi, String userUID) {
             Long tsLong = System.currentTimeMillis()/1000;
             this.timestamp = tsLong.toString();
             this.mac_address_BT = mac_address_BT;
             this.rssi = rssi;
+            this.userUID = userUID;
         }
 
         public void saveToFirebase() {
             FirebaseDatabase database = FirebaseDatabase.getInstance();
-            DatabaseReference dbRef = database.getReference("bluetoothDevices");
+            DatabaseReference dbRef = database.getReference("global/bluetoothDevices");
+            DatabaseReference dbRef2 = database.getReference("users/"+this.userUID+"/bluetoothDevices");
             dbRef.push().setValue(this);
+            dbRef2.push().setValue(this);
         }
     }
 
@@ -162,7 +169,7 @@ public class BluetoothAnalysis {
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 int rssi = intent.getShortExtra(BluetoothDevice.EXTRA_RSSI,Short.MIN_VALUE);
                 BluetoothDiscoveredDevice discoveredDevice = new BluetoothDiscoveredDevice(
-                        device.getAddress(), rssi);
+                        device.getAddress(), rssi, mUserUID);
                 discoveredDevice.saveToFirebase();
             }
             else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action) && shouldContinue) {
@@ -175,6 +182,7 @@ public class BluetoothAnalysis {
         if (isRunning()) {
             setRunning(false);
             mContextRef.get().unregisterReceiver(mReceiver);
+            mButton.setText(mContextRef.get().getResources().getString(R.string.startBluetooth));
         }
     }
 

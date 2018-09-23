@@ -19,6 +19,7 @@ public class StepsAnalysis {
     private WeakReference<Context> mContextRef;
     private SensorManager mSensorManager;
     private Button mButton;
+    private String mUserUID;
 
     private int mStepsOffset = 0;
     private Sensor mSensor;
@@ -27,10 +28,12 @@ public class StepsAnalysis {
     private int mSensorDelay = -1;
     private View.OnClickListener mOnClickListener;
 
-    public StepsAnalysis(WeakReference<Context> contextRef, SensorManager sensorManager, Button button) {
+    public StepsAnalysis(WeakReference<Context> contextRef, SensorManager sensorManager,
+                         Button button, final String userUID) {
         this.mContextRef = contextRef;
         this.mSensorManager = sensorManager;
         this.mButton = button;
+        this.mUserUID = userUID;
 
         this.mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
         this.mSensorListener = new SensorEventListener() {
@@ -44,7 +47,7 @@ public class StepsAnalysis {
                 if (mStepsOffset == 0) {
                     mStepsOffset = counter;
                 }
-                Step step = new Step(counter - mStepsOffset);
+                Step step = new Step(counter - mStepsOffset, mUserUID);
                 step.saveToFirebase();
             }
         };
@@ -82,6 +85,7 @@ public class StepsAnalysis {
         if (isRunning()) {
             setRunning(false);
             mSensorManager.unregisterListener(mSensorListener, mSensor);
+            mButton.setText(mContextRef.get().getResources().getString(R.string.startStepsCounter));
         }
     }
 
@@ -108,17 +112,21 @@ public class StepsAnalysis {
     private static class Step {
         public int counter;
         public String timestamp;
+        public String userUID;
 
-        public Step(int counter) {
+        public Step(int counter, String userUID) {
             Long tsLong = System.currentTimeMillis()/1000;
             this.timestamp = tsLong.toString();
             this.counter = counter;
+            this.userUID = userUID;
         }
 
         public void saveToFirebase() {
             FirebaseDatabase database = FirebaseDatabase.getInstance();
-            DatabaseReference dbRef = database.getReference("steps");
+            DatabaseReference dbRef = database.getReference("global/steps");
+            DatabaseReference dbRef2 = database.getReference("users/"+this.userUID+"/steps");
             dbRef.push().setValue(this);
+            dbRef2.push().setValue(this);
         }
     }
 

@@ -23,15 +23,17 @@ import java.util.List;
 public class WifiAnalysis {
     private WeakReference<Context> mContextRef;
     private Button mButton;
+    private String mUserUID;
 
     private View.OnClickListener mOnClickListener;
     private int mSensorDelay = -1;
     private boolean mRunning = false;
 
 
-    public WifiAnalysis(WeakReference<Context> contextRef, Button button) {
+    public WifiAnalysis(WeakReference<Context> contextRef, Button button, String userUID) {
         this.mContextRef = contextRef;
         this.mButton = button;
+        this.mUserUID = userUID;
 
         this.mOnClickListener = new View.OnClickListener() {
             @Override
@@ -95,7 +97,7 @@ public class WifiAnalysis {
                 if (shouldContinue && !scanResults.isEmpty()) {
                     for (ScanResult scanResult : scanResults) {
                         WifiDiscoveredDevice wifiDiscoveredDevice = new WifiDiscoveredDevice(
-                                scanResult.BSSID, scanResult.level);
+                                scanResult.BSSID, scanResult.level, mUserUID);
                         wifiDiscoveredDevice.saveToFirebase();
                     }
                     scanWifiWithDelay();
@@ -134,18 +136,22 @@ public class WifiAnalysis {
         public String bssid;
         public int level;
         public String timestamp;
+        public String userUID;
 
-        public WifiDiscoveredDevice(String bssid, int level) {
+        public WifiDiscoveredDevice(String bssid, int level, String userUID) {
             Long tsLong = System.currentTimeMillis()/1000;
             this.timestamp = tsLong.toString();
             this.bssid = bssid;
             this.level = level;
+            this.userUID = userUID;
         }
 
         public void saveToFirebase() {
             FirebaseDatabase database = FirebaseDatabase.getInstance();
-            DatabaseReference dbRef = database.getReference("wifiDevices");
+            DatabaseReference dbRef = database.getReference("global/wifiDevices");
+            DatabaseReference dbRef2 = database.getReference("users/"+this.userUID+"/wifiDevices");
             dbRef.push().setValue(this);
+            dbRef2.push().setValue(this);
         }
     }
 
@@ -153,6 +159,7 @@ public class WifiAnalysis {
     public void unregisterListener() {
         if (isRunning()) {
             setRunning(false);
+            mButton.setText(mContextRef.get().getResources().getString(R.string.startWifi));
         }
     }
 
