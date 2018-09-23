@@ -157,15 +157,13 @@ public class BluetoothAnalysis {
                                            @NonNull int[] grantResults) {
         switch (requestCode) {
             case ACTION_REQUEST_BLUETOOTH_PERMISSIONS:
-                if (grantResults.length > 0
+                if (grantResults.length == 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    searchBluetoothDevices();
-                } else {
                     Toast.makeText(mContextRef.get(), "Please, accept permissions to search devices",
                             Toast.LENGTH_SHORT).show();
-                    startSearching();
                 }
         }
+        startSearching();
     }
 
     private static class BluetoothDiscoveredDevice {
