@@ -19,5 +19,6 @@
     <string name="startWifi">Start WiFi</string>
     <string name="stopWifi">Stop WiFi</string>
     <string name="sign_out">Sign Out</string>
+    <string name="export_data">Export data</string>
 
 </resources>

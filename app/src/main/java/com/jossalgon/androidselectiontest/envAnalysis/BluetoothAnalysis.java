@@ -17,6 +17,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.jossalgon.androidselectiontest.R;
@@ -157,18 +158,16 @@ public class BluetoothAnalysis {
                                            @NonNull int[] grantResults) {
         switch (requestCode) {
             case ACTION_REQUEST_BLUETOOTH_PERMISSIONS:
-                if (grantResults.length == 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     Toast.makeText(mContextRef.get(), "Please, accept permissions to search devices",
                             Toast.LENGTH_SHORT).show();
                 }
         }
-        startSearching();
     }
 
-    private static class BluetoothDiscoveredDevice {
+    public static class BluetoothDiscoveredDevice {
         public String mac_address_BT;
-        public int rssi;
+        public Integer rssi;
         public String timestamp;
         public String userUID;
 
@@ -178,6 +177,13 @@ public class BluetoothAnalysis {
             this.mac_address_BT = mac_address_BT;
             this.rssi = rssi;
             this.userUID = userUID;
+        }
+
+        public BluetoothDiscoveredDevice(DataSnapshot ds) {
+            this.timestamp = ds.child("timestamp").getValue(String.class);
+            this.mac_address_BT = ds.child("mac_address_BT").getValue(String.class);
+            this.rssi = ds.child("rssi").getValue(Integer.class);
+            this.userUID = ds.child("userUID").getValue(String.class);
         }
 
         public void saveToFirebase() {

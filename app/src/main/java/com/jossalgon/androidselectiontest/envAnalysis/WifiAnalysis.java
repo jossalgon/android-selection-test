@@ -9,6 +9,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.jossalgon.androidselectiontest.R;
@@ -132,9 +133,9 @@ public class WifiAnalysis {
         this.mSensorDelay = sensorDelay;
     }
 
-    private static class WifiDiscoveredDevice {
+    public static class WifiDiscoveredDevice {
         public String bssid;
-        public int level;
+        public Integer level;
         public String timestamp;
         public String userUID;
 
@@ -144,6 +145,13 @@ public class WifiAnalysis {
             this.bssid = bssid;
             this.level = level;
             this.userUID = userUID;
+        }
+
+        public WifiDiscoveredDevice(DataSnapshot ds) {
+            this.timestamp = ds.child("timestamp").getValue(String.class);
+            this.bssid = ds.child("bssid").getValue(String.class);
+            this.level = ds.child("level").getValue(Integer.class);
+            this.userUID = ds.child("userUID").getValue(String.class);
         }
 
         public void saveToFirebase() {

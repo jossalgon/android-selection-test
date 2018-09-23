@@ -2,31 +2,47 @@ package com.jossalgon.androidselectiontest;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.hardware.SensorManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.IdRes;
 import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.RadioGroup;
+import android.widget.Toast;
 
 import com.firebase.ui.auth.AuthUI;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.jossalgon.androidselectiontest.envAnalysis.BluetoothAnalysis;
+import com.jossalgon.androidselectiontest.envAnalysis.BluetoothAnalysis.BluetoothDiscoveredDevice;
 import com.jossalgon.androidselectiontest.envAnalysis.WifiAnalysis;
+import com.jossalgon.androidselectiontest.envAnalysis.WifiAnalysis.WifiDiscoveredDevice;
 import com.jossalgon.androidselectiontest.sensorAnalysis.AccelerationAnalysis;
+import com.jossalgon.androidselectiontest.sensorAnalysis.AccelerationAnalysis.Acceleration;
 import com.jossalgon.androidselectiontest.sensorAnalysis.StepsAnalysis;
+import com.jossalgon.androidselectiontest.sensorAnalysis.StepsAnalysis.Step;
+import com.jossalgon.androidselectiontest.utils.FileExporter;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity {
     private static final double GRAVITY = 9.8;
     public static final int RC_SIGN_IN = 2;
+    static WeakReference<Context> mContextRef;
 
     SensorManager mSensorManager;
     RadioGroup mFrequencySelectorRG;
@@ -45,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        mContextRef = new WeakReference<>(getApplicationContext());
         
         mFirebaseAuth = FirebaseAuth.getInstance();
 
@@ -93,25 +110,25 @@ public class MainActivity extends AppCompatActivity {
 
     private void setAnalysisSystems(String userUID) {
         if (mAccelerationAnalysis == null) {
-            mAccelerationAnalysis = new AccelerationAnalysis(new WeakReference<>(getApplicationContext()),
+            mAccelerationAnalysis = new AccelerationAnalysis(mContextRef,
                     mSensorManager, mRunAccelerationButton, userUID);
             mRunAccelerationButton.setOnClickListener(mAccelerationAnalysis.getmOnClickListener());
         }
 
         if (mStepsAnalysis == null) {
-            mStepsAnalysis = new StepsAnalysis(new WeakReference<>(getApplicationContext()),
+            mStepsAnalysis = new StepsAnalysis(mContextRef,
                     mSensorManager, mRunStepsCounterButton, userUID);
             mRunStepsCounterButton.setOnClickListener(mStepsAnalysis.getmOnClickListener());
         }
 
         if (mBluetoothAnalysis == null) {
-            mBluetoothAnalysis = new BluetoothAnalysis(new WeakReference<>(getApplicationContext()),
+            mBluetoothAnalysis = new BluetoothAnalysis(mContextRef,
                     this, mRunBluetoothButton, userUID);
             mRunBluetoothButton.setOnClickListener(mBluetoothAnalysis.getOnClickListener());
         }
 
         if (mWifiAnalysis == null) {
-            mWifiAnalysis = new WifiAnalysis(new WeakReference<Context>(getApplicationContext()),
+            mWifiAnalysis = new WifiAnalysis(mContextRef,
                     mRunWifiButton, userUID);
             mRunWifiButton.setOnClickListener(mWifiAnalysis.getOnClickListener());
         }
@@ -196,8 +213,29 @@ public class MainActivity extends AppCompatActivity {
                 AuthUI.getInstance().signOut(this);
                 unregisterAnalysisSystems();
                 return true;
+            case R.id.export_data_menu:
+                isStoragePermissionGranted();
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
+        }
+    }
+
+    public boolean isStoragePermissionGranted() {
+        if (Build.VERSION.SDK_INT >= 23) {
+            if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    == PackageManager.PERMISSION_GRANTED) {
+                exportDatabase();
+                return true;
+            } else {
+                ActivityCompat.requestPermissions(this, new String[]{
+                        android.Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+                return false;
+            }
+        }
+        else {
+            exportDatabase();
+            return true;
         }
     }
 
@@ -216,7 +254,51 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (grantResults[0] == PackageManager.PERMISSION_GRANTED){
+            exportDatabase();
+        }
         mBluetoothAnalysis.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+
+    private void exportDatabase() {
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        DatabaseReference dbRef = database.getReference("users/"+mFirebaseAuth.getUid());
+        dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                ArrayList<Acceleration> accelerations = new ArrayList<>();
+                ArrayList<Step> steps = new ArrayList<>();
+                ArrayList<WifiDiscoveredDevice> wifiDevices = new ArrayList<>();
+                ArrayList<BluetoothDiscoveredDevice> bluetoothDevices = new ArrayList<>();
+                for (DataSnapshot ds : dataSnapshot.child("accelerations").getChildren()) {
+                    Acceleration a = new Acceleration(ds);
+                    accelerations.add(a);
+                }
+                for (DataSnapshot ds : dataSnapshot.child("steps").getChildren()) {
+                    Step s = new Step(ds);
+                    steps.add(s);
+                }
+                for (DataSnapshot ds : dataSnapshot.child("wifiDevices").getChildren()) {
+                    WifiDiscoveredDevice w = new WifiDiscoveredDevice(ds);
+                    wifiDevices.add(w);
+                }
+                for (DataSnapshot ds : dataSnapshot.child("bluetoothDevices").getChildren()) {
+                    BluetoothDiscoveredDevice b = new BluetoothDiscoveredDevice(ds);
+                    bluetoothDevices.add(b);
+                }
+                new FileExporter().execute(new FileExporter.FirebaseData(accelerations, steps, 
+                        wifiDevices, bluetoothDevices));
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+            }
+        });
+
+    }
+
+    public static void onFileExporterFinished(String filePath) {
+        Toast.makeText(mContextRef.get(), "File saved at " + filePath, Toast.LENGTH_LONG).show();
     }
 
     @Override

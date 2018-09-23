@@ -9,6 +9,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.jossalgon.androidselectiontest.R;
@@ -109,8 +110,8 @@ public class StepsAnalysis {
         this.mSensorDelay = sensorDelay;
     }
 
-    private static class Step {
-        public int counter;
+    public static class Step {
+        public Integer counter;
         public String timestamp;
         public String userUID;
 
@@ -119,6 +120,12 @@ public class StepsAnalysis {
             this.timestamp = tsLong.toString();
             this.counter = counter;
             this.userUID = userUID;
+        }
+
+        public Step(DataSnapshot ds) {
+            this.timestamp = ds.child("timestamp").getValue(String.class);
+            this.counter = ds.child("counter").getValue(Integer.class);
+            this.userUID = ds.child("userUID").getValue(String.class);
         }
 
         public void saveToFirebase() {

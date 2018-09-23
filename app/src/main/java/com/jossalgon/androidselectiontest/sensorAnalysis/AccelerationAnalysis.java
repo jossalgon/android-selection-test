@@ -9,6 +9,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.jossalgon.androidselectiontest.R;
@@ -114,9 +115,9 @@ public class AccelerationAnalysis {
         this.mSensorDelay = sensorDelay;
     }
 
-    private static class Acceleration {
-        public double acc_x1, acc_y1, acc_z1, acc_modulo1;
-        public boolean s_n1;
+    public static class Acceleration {
+        public Double acc_x1, acc_y1, acc_z1, acc_modulo1;
+        public Boolean s_n1;
         public String timestamp;
         public String userUID;
 
@@ -131,6 +132,16 @@ public class AccelerationAnalysis {
             this.acc_modulo1 = acc_modulo1;
             this.s_n1 = s_n1;
             this.userUID = userUID;
+        }
+
+        public Acceleration(DataSnapshot ds) {
+            this.timestamp = ds.child("timestamp").getValue(String.class);
+            this.acc_x1 = ds.child("acc_x1").getValue(Double.class);
+            this.acc_y1 = ds.child("acc_y1").getValue(Double.class);
+            this.acc_z1 = ds.child("acc_z1").getValue(Double.class);
+            this.acc_modulo1 = ds.child("acc_modulo1").getValue(Double.class);
+            this.s_n1 = ds.child("s_n1").getValue(Boolean.class);
+            this.userUID = ds.child("userUID").getValue(String.class);
         }
 
         public void saveToFirebase() {
