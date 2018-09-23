@@ -49,8 +49,10 @@ public class AccelerationAnalysis {
                 double z = event.values[2];
                 double mod = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2));
                 boolean thresholdExceeded = (mThreshold > 0 && mod >= mThreshold);
-                Acceleration acceleration = new Acceleration(x, y, z, mod, thresholdExceeded, mUserUID);
-                acceleration.saveToFirebase();
+                if (thresholdExceeded) {
+                    Acceleration acceleration = new Acceleration(x, y, z, mod, thresholdExceeded, mUserUID);
+                    acceleration.saveToFirebase();
+                }
             }
         };
 
