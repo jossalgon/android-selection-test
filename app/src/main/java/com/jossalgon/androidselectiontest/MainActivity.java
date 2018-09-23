@@ -42,6 +42,7 @@ import java.util.Arrays;
 public class MainActivity extends AppCompatActivity {
     private static final double GRAVITY = 9.8;
     public static final int RC_SIGN_IN = 2;
+    private static final int ACTION_REQUEST_STORAGE_PERMISSION = 3;
     static WeakReference<Context> mContextRef;
 
     SensorManager mSensorManager;
@@ -229,7 +230,8 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             } else {
                 ActivityCompat.requestPermissions(this, new String[]{
-                        android.Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+                        android.Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                        ACTION_REQUEST_STORAGE_PERMISSION);
                 return false;
             }
         }
@@ -254,8 +256,9 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        if (grantResults[0] == PackageManager.PERMISSION_GRANTED){
-            exportDatabase();
+        if (grantResults[0] == PackageManager.PERMISSION_GRANTED &&
+                requestCode == ACTION_REQUEST_STORAGE_PERMISSION){
+                exportDatabase();
         }
         mBluetoothAnalysis.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }

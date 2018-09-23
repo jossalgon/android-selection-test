@@ -159,6 +159,8 @@ public class BluetoothAnalysis {
         switch (requestCode) {
             case ACTION_REQUEST_BLUETOOTH_PERMISSIONS:
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    startSearching();
+                } else {
                     Toast.makeText(mContextRef.get(), "Please, accept permissions to search devices",
                             Toast.LENGTH_SHORT).show();
                 }
