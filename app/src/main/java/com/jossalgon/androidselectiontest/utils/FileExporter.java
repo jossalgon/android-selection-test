@@ -42,7 +42,7 @@ public class FileExporter extends AsyncTask<FileExporter.FirebaseData, Void, Str
             Long tsLong = System.currentTimeMillis()/1000;
             String filePath = dir.getPath()+"/"+tsLong.toString()+".json";
             Writer writer = new FileWriter(filePath);
-            Gson gson = new GsonBuilder().create();
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
             gson.toJson(params[0], writer);
             writer.close();
             return filePath;
