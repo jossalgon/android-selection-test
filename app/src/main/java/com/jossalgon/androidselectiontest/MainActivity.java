@@ -217,9 +217,27 @@ public class MainActivity extends AppCompatActivity {
             case R.id.export_data_menu:
                 isStoragePermissionGranted();
                 return true;
+            case R.id.remove_data_menu:
+                removeUserDataFromFirebase();
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    private void removeUserDataFromFirebase() {
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        DatabaseReference dbRef = database.getReference("users/"+mFirebaseAuth.getUid());
+        dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                dataSnapshot.getRef().removeValue();
+                Toast.makeText(MainActivity.this, "Data removed", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+            }
+        });
     }
 
     public boolean isStoragePermissionGranted() {

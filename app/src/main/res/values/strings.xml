@@ -20,5 +20,6 @@
     <string name="stopWifi">Stop WiFi</string>
     <string name="sign_out">Sign Out</string>
     <string name="export_data">Export data</string>
+    <string name="remove_data">Remove data</string>
 
 </resources>
